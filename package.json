@@ -13,11 +13,13 @@
     "ajv": "^8.17.1",
     "ajv-keywords": "^5.1.0",
     "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
     "framer-motion": "^6.5.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^3.11.0",
     "react-scripts": "5.0.1",
+    "recharts": "^2.13.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
