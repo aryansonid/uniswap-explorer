@@ -17,12 +17,15 @@ import {
   FaSortDown,
 } from 'react-icons/fa';
 import axios from 'axios';
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { format } from 'date-fns'; // Import the format function
 
 const headers = [
   { key: 'token', label: 'Token name' },
   { key: 'price', label: 'Price' },
   { key: '1d_change', label: '1 day' },
   { key: 'volume', label: 'Volume' },
+  { key: 'volumeChart', label: 'Volume Chart' },
 ];
 
 const query = `
@@ -78,22 +81,19 @@ const TokenTable = () => {
           if (lastDayData) {
             const open = parseFloat(lastDayData.open);
             const close = parseFloat(lastDayData.close);
-            console.log(
-              token.symbol,
-              'Open:- ',
-              open,
-              'Close:- ',
-              close,
-              ((close - open) / open) * 100
-            );
+            const percentageChange = !isNaN(open) && !isNaN(close)
+              ? ((close - open) / open) * 100
+              : 'N/A';
 
-            if (!isNaN(open) && !isNaN(close)) {
-              const percentageChange = ((close - open) / open) * 100;
-              return {
-                ...token,
-                percentageChange: percentageChange.toFixed(2),
-              };
-            }
+            return {
+              ...token,
+              percentageChange: percentageChange.toFixed(2),
+              tokenDayData: tokenDayData.map(day => ({
+                date: format(new Date(day.date * 1000), 'yyyy-MM-dd'), // Convert to readable format
+                priceUSD: parseFloat(day.priceUSD) || 0,
+                volume: parseFloat(day.volume) || 0,
+              })),
+            };
           }
           return {
             ...token,
@@ -181,6 +181,16 @@ const TokenTable = () => {
                     </HStack>
                   ) : header.key === '1d_change' ? (
                     `${token.percentageChange}%`
+                  ) : header.key === 'volumeChart' ? (
+                    <Box width={200} height={100}>
+                      <LineChart width={200} height={100} data={token.tokenDayData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="volume" stroke="#82ca9d" />
+                      </LineChart>
+                    </Box>
                   ) : (
                     token[header.key] || 'N/A'
                   )}
@@ -189,7 +199,7 @@ const TokenTable = () => {
             </Tr>
           ))}
         </Tbody>
-      </Table>  
+      </Table>
     </Box>
   );
 };
