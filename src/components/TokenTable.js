@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react';
 import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import useFetchTokenData from '../hooks/useFetchTokenData';
-import { LineChart, Line, Tooltip, XAxis, YAxis } from 'recharts';
+import { LineChart, Line, XAxis, YAxis } from 'recharts';
 import TableSkeleton from './TableSkeleton';
 import { formatWithPostfix } from '../utils/helpers';
 
@@ -140,7 +140,11 @@ const TokenTable = () => {
                   {headers.map(header => (
                     <Td key={header.key} height="64px" verticalAlign="middle">
                       {header.key === 'index' ? (
-                        <Text fontSize="16px" fontWeight={500}>
+                        <Text
+                          fontSize="16px"
+                          fontWeight={500}
+                          whiteSpace="nowrap"
+                        >
                           {index + 1}
                         </Text>
                       ) : header.key === 'token' ? (
@@ -162,12 +166,18 @@ const TokenTable = () => {
                             fontSize="16px"
                             fontWeight={500}
                             color="#7d7d7d"
+                            whiteSpace="nowrap"
                           >
                             {token.symbol}
                           </Text>
                         </HStack>
                       ) : header.key === 'price' ? (
-                        <Text fontSize="16px" fontWeight={500}>{`$ ${parseFloat(
+                        <Text
+                          fontSize="16px"
+                          fontWeight={500}
+                          whiteSpace="nowrap"
+                          width={header.width || 'auto'}
+                        >{`$ ${parseFloat(
                           token.tokenDayData[0]?.price || 0
                         ).toFixed(2)}`}</Text>
                       ) : header.key === '1d_change' ? (
@@ -177,7 +187,9 @@ const TokenTable = () => {
                           ) : token.percentageChange < 0 ? (
                             <StatDownArrow boxSize={3} color="red.500" />
                           ) : (
-                            <Text color="black"></Text>
+                            <Text color="black" whiteSpace="nowrap">
+                              −
+                            </Text>
                           )}
                           <Text
                             fontSize="16px"
@@ -189,6 +201,7 @@ const TokenTable = () => {
                                 ? 'green.500'
                                 : 'black'
                             }
+                            whiteSpace="nowrap"
                           >
                             {token.percentageChange === '0.00'
                               ? '0%'
@@ -199,6 +212,7 @@ const TokenTable = () => {
                         <Text
                           fontSize="16px"
                           fontWeight={500}
+                          whiteSpace="nowrap"
                         >{`$ ${formatWithPostfix(token.volumeUSD)}`}</Text>
                       ) : header.key === 'volumeChart' ? (
                         <Box width={200} overflow="hidden">
@@ -208,8 +222,8 @@ const TokenTable = () => {
                             data={token.tokenDayData}
                             margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                           >
-                            <XAxis dataKey="date" hide />
-                            <YAxis hide />
+                            <XAxis dataKey="date" hide grid={false} />
+                            <YAxis hide grid={false} />
                             <Line
                               type="monotone"
                               dataKey="volume"
@@ -220,7 +234,7 @@ const TokenTable = () => {
                           </LineChart>
                         </Box>
                       ) : (
-                        <Text fontSize="16px">
+                        <Text fontSize="16px" whiteSpace="nowrap">
                           {(token[header.key] || 0).toString()}
                         </Text>
                       )}
