@@ -4,27 +4,26 @@ import { format } from 'date-fns';
 
 const query = `
 query MyQuery {
-  tokens(where: {
-    symbol_in: ["ETH", "USDT","WBTC", "USDC.e","USDC", "USDe", "CELO"]
-  })  {
-    symbol
-    name
+  topTokens: tokens(
+    first: 10
+    orderBy: volumeUSD
+    orderDirection: desc
+  ) {
     id
+    name
+    symbol
+    volumeUSD
     tokenDayData(
-      orderBy : date,
-      orderDirection : desc
-    )  {
-      high
-      close
-      low
-      open
+      orderBy: volumeUSD
+      orderDirection: desc
+    ) {
       priceUSD
       volume
       volumeUSD
       date
+      open
+      close
     }
-    volume
-    volumeUSD
   }
 }
 `;
@@ -32,7 +31,7 @@ query MyQuery {
 const fetchSubgraphData = async (api, query) => {
   try {
     const response = await axios.post(api, { query });
-    return response.data.data.tokens;
+    return response.data.data.topTokens;
   } catch (error) {
     console.error('Error fetching data from subgraph:', error);
     throw error;
@@ -52,33 +51,29 @@ const useFetchTokenData = apiUrl => {
         const data = await fetchSubgraphData(apiUrl, query);
         const processedData = data.map(token => {
           const { tokenDayData } = token;
-          const lastDayData = tokenDayData[tokenDayData.length - 1];
+          const lastDayData = tokenDayData[0];
 
           if (lastDayData) {
             const open = parseFloat(lastDayData.open);
             const close = parseFloat(lastDayData.close);
-
-            let percentageChange = 0;
-            if (open !== 0 && close !== 0) {
-              percentageChange = ((close - open) / open) * 100;
-            }
+            const percentageChange =
+              close && open ? ((close - open) / open) * 100 : 0;
+            const percentageChangeString = percentageChange.toFixed(2);
 
             return {
               ...token,
-              percentageChange:
-                open === 0 || close === 0
-                  ? '0.00'
-                  : percentageChange.toFixed(2),
-              tokenDayData: tokenDayData.map(day => ({
-                date: format(new Date(day.date * 1000), 'yyyy-MM-dd'),
-                priceUSD: parseFloat(day.priceUSD) || 0,
-                volume: parseFloat(day.volume) || 0,
+              percentageChange: percentageChangeString,
+              tokenDayData: tokenDayData.map(data => ({
+                date: format(new Date(data.date * 1000), 'yyyy-MM-dd'),
+                volume: parseFloat(data.volume) || 0,
+                price: parseFloat(data.priceUSD) || 0,
               })),
             };
           }
           return {
             ...token,
-            percentageChange: '0.00',
+            percentageChange: '0',
+            tokenDayData: [],
           };
         });
         setTokenData(processedData);
