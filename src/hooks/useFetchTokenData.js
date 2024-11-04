@@ -5,13 +5,15 @@ import { format } from 'date-fns';
 const query = `
 query MyQuery {
   tokens(where: {
-    symbol_in: ["USDC", "DAI", "WETH"]
-  }) {
+    symbol_in: ["ETH", "USDT","WBTC", "USDC.e","USDC", "USDe", "CELO"]
+  })  {
     symbol
-    volume
     name
     id
-    tokenDayData {
+    tokenDayData(
+      orderBy : date,
+      orderDirection : desc
+    )  {
       high
       close
       low
@@ -21,6 +23,7 @@ query MyQuery {
       volumeUSD
       date
     }
+    volumeUSD
   }
 }
 `;
@@ -58,15 +61,6 @@ const useFetchTokenData = apiUrl => {
             if (open !== 0 && close !== 0) {
               percentageChange = ((close - open) / open) * 100;
             }
-
-            console.log(
-              'Open:- ',
-              open,
-              'Close:- ',
-              close,
-              'Percentage Change:- ',
-              percentageChange
-            );
 
             return {
               ...token,
