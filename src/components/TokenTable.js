@@ -62,6 +62,8 @@ const TokenTable = () => {
     setSortConfig({ key, direction });
   };
 
+  console.log("Token Data:- ",tokenData)
+
   return (
     <Box px={16}>
       <Text fontSize="2xl" mb={4}>
@@ -142,6 +144,8 @@ const TokenTable = () => {
                         </HStack>
                       ) : header.key === '1d_change' ? (
                         <Text fontSize="16px">{`${token.percentageChange}%`}</Text>
+                      ): header.key === 'volume' ? (
+                        <Text fontSize="16px">{`${Number(token.volume).toFixed(2)}`}</Text>
                       ) : header.key === 'volumeChart' ? (
                         <Box width={200} overflow="hidden">
                           <LineChart

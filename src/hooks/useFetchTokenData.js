@@ -23,6 +23,7 @@ query MyQuery {
       volumeUSD
       date
     }
+    volume
     volumeUSD
   }
 }
