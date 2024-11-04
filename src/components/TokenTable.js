@@ -1,5 +1,4 @@
-'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Table,
@@ -12,47 +11,52 @@ import {
   HStack,
   IconButton,
   Avatar,
+  StatUpArrow,
+  StatDownArrow,
 } from '@chakra-ui/react';
 import { FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import useFetchTokenData from '../hooks/useFetchTokenData';
-import { LineChart, Line } from 'recharts';
+import { LineChart, Line, Tooltip, XAxis, YAxis } from 'recharts';
 import TableSkeleton from './TableSkeleton';
+import { formatWithPostfix } from '../utils/helpers';
 
 const headers = [
   { key: 'index', label: '#' },
   { key: 'token', label: 'Token name' },
-  { key: 'price', label: 'Price' },
-  { key: '1d_change', label: '1 day' },
+  { key: 'price', label: 'Price', width: '100px' },
+  { key: '1d_change', label: '1 day', width: '100px' },
   { key: 'volume', label: 'Volume' },
   { key: 'volumeChart', label: 'Volume Chart' },
 ];
 
 const TokenTable = () => {
   const apiUrl = process.env.REACT_APP_SUBGRAPH_API_URL;
-  const { tokenData, loading } = useFetchTokenData(apiUrl);
+  const { tokenData, loading, error } = useFetchTokenData(apiUrl);
   const [sortConfig, setSortConfig] = useState({
     key: 'token',
     direction: 'ascending',
   });
 
-  const sortedTokenData = [...tokenData].sort((a, b) => {
-    const aValue =
-      sortConfig.key === '1d_change'
-        ? parseFloat(a.percentageChange) || 0
-        : a[sortConfig.key];
-    const bValue =
-      sortConfig.key === '1d_change'
-        ? parseFloat(b.percentageChange) || 0
-        : b[sortConfig.key];
+  const sortedTokenData = useMemo(() => {
+    return [...tokenData].sort((a, b) => {
+      const aValue =
+        sortConfig.key === '1d_change'
+          ? parseFloat(a.percentageChange) || 0
+          : a[sortConfig.key];
+      const bValue =
+        sortConfig.key === '1d_change'
+          ? parseFloat(b.percentageChange) || 0
+          : b[sortConfig.key];
 
-    if (aValue < bValue) {
-      return sortConfig.direction === 'ascending' ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === 'ascending' ? 1 : -1;
-    }
-    return 0;
-  });
+      if (aValue < bValue) {
+        return sortConfig.direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [tokenData, sortConfig]);
 
   const requestSort = key => {
     let direction = 'ascending';
@@ -61,8 +65,6 @@ const TokenTable = () => {
     }
     setSortConfig({ key, direction });
   };
-
-  console.log("Token Data:- ",tokenData)
 
   return (
     <Box px={16}>
@@ -73,6 +75,10 @@ const TokenTable = () => {
         <HStack justify="center" mt={4}>
           <TableSkeleton />
         </HStack>
+      ) : error ? (
+        <Text color="red.500">{error}</Text>
+      ) : tokenData.length === 0 ? (
+        <Text>No tokens available.</Text>
       ) : (
         <Box
           mt={4}
@@ -91,6 +97,8 @@ const TokenTable = () => {
                     height="48px"
                     bg={'#f9f9f9'}
                     color={'#7d7d7d'}
+                    whiteSpace="nowrap"
+                    width={header.width || 'auto'}
                   >
                     <HStack>
                       <Text
@@ -132,7 +140,9 @@ const TokenTable = () => {
                   {headers.map(header => (
                     <Td key={header.key} height="64px" verticalAlign="middle">
                       {header.key === 'index' ? (
-                        <Text fontSize="16px">{index + 1}</Text>
+                        <Text fontSize="16px" fontWeight={500}>
+                          {index + 1}
+                        </Text>
                       ) : header.key === 'token' ? (
                         <HStack spacing={2}>
                           <Avatar
@@ -140,12 +150,56 @@ const TokenTable = () => {
                             src={`/logo/${token.symbol.toLowerCase()}.png`}
                             alt={token.symbol}
                           />
-                          <Text fontSize="16px">{token.symbol}</Text>
+                          <Text
+                            fontSize="16px"
+                            fontWeight={500}
+                            color="#222222"
+                            whiteSpace="nowrap"
+                          >
+                            {token.name}
+                          </Text>
+                          <Text
+                            fontSize="16px"
+                            fontWeight={500}
+                            color="#7d7d7d"
+                          >
+                            {token.symbol}
+                          </Text>
                         </HStack>
+                      ) : header.key === 'price' ? (
+                        <Text fontSize="16px" fontWeight={500}>{`$ ${parseFloat(
+                          token.tokenDayData[0]?.price || 0
+                        ).toFixed(2)}`}</Text>
                       ) : header.key === '1d_change' ? (
-                        <Text fontSize="16px">{`${token.percentageChange}%`}</Text>
-                      ): header.key === 'volume' ? (
-                        <Text fontSize="16px">{`${Number(token.volume).toFixed(2)}`}</Text>
+                        <HStack spacing={1} alignItems="center">
+                          {token.percentageChange > 0 ? (
+                            <StatUpArrow boxSize={3} color="green.500" />
+                          ) : token.percentageChange < 0 ? (
+                            <StatDownArrow boxSize={3} color="red.500" />
+                          ) : (
+                            <Text color="black"></Text>
+                          )}
+                          <Text
+                            fontSize="16px"
+                            fontWeight={500}
+                            color={
+                              token.percentageChange < 0
+                                ? 'red.500'
+                                : token.percentageChange > 0
+                                ? 'green.500'
+                                : 'black'
+                            }
+                          >
+                            {token.percentageChange === '0.00'
+                              ? '0%'
+                              : `${token.percentageChange}%`}
+                          </Text>
+                        </HStack>
+                      ) : header.key === 'volume' ? (
+                        <Text
+                          fontSize="16px"
+                          fontWeight={500}
+                        >{`$ ${formatWithPostfix(token.volumeUSD)}`}</Text>
                       ) : header.key === 'volumeChart' ? (
                         <Box width={200} overflow="hidden">
                           <LineChart
@@ -154,6 +208,8 @@ const TokenTable = () => {
                             data={token.tokenDayData}
                             margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                           >
+                            <XAxis dataKey="date" hide />
+                            <YAxis hide />
                             <Line
                               type="monotone"
                               dataKey="volume"
